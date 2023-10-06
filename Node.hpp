@@ -3,9 +3,12 @@
 
 #include <string>
 #include <cmath>
+#include <random>
+#include <iostream>
 
 class Node{
     private:
+        int n;
         float* weights;
         float* weights_n;
         float* input;
@@ -14,10 +17,35 @@ class Node{
         float der_val;
         std::string fn;
     public:
+        Node(int, std::string);
         int activation_fn();
         int derivative();
+        void print_vars(){
+            for(int i=0;i<n;i++){
+                std::cout<<*(weights+i)<<"\t"<<*(input+i)<<"\n";
+            }
+        }
+        ~Node(){
+            delete[] weights;
+            delete[] input;
+        }
 };
 
+Node::Node(int no_inputs, std::string acn){
+    n = no_inputs;
+    weights = new float[no_inputs];
+    input = new float[no_inputs];
+    for(int i=0;i<no_inputs;i++){
+        *(weights+i) = (float)(rand()) / (float)(RAND_MAX);
+        *(input+i) = 0.0;
+    }
+    fn = acn;
+    weights_n = NULL;
+    output = 0.0;
+    sum = 0.0;
+    der_val = 0.0;
+    
+}
 
 int Node::activation_fn(){
     
