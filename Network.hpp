@@ -8,9 +8,25 @@ struct data{
     int size;
 };
 
-class Node;
+class Node{
+    private:
+        float* weights;
+        float* weights_n;
+        float* input;
+        float output;
+        std::string fn;
+    public:
+        float activation_fn();
+};
 
-class Layer;
+class Layer{
+    private:
+        Layer* next;
+        int layer_length;
+        Node* nodes;
+    public:
+        void display();
+};
 
 class Network{
     private:
@@ -30,12 +46,12 @@ int Network::Add_Layer(int num_of_Nodes, std::string activation_fn){
 
 int Network::train(float** x, float** y, int length, int epochs, int batch_size){
     if(num_layers == 0){
-        std::cerr<<"The network is incomplete. Please Add layers to it before running";
+        std::cerr<<"The network is incomplete. Please Add layers to it before running\n";
         return -1;
     }
     for(int i=0;i<length/batch_size;i++){
         struct data *output = (struct data*)malloc(sizeof(struct data));
-        forward_propogate(x, batch_size*i, (i == length/batch_size - 1)?(length%batch_size):(batch_size) );
+        forward_propogate(x, batch_size*i, (i == length/batch_size - 1)?(length%batch_size):(batch_size), output );
         back_propogate();
     }
     
