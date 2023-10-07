@@ -5,6 +5,7 @@
 #include <cmath>
 #include <random>
 #include <iostream>
+#include <time.h>
 
 class Node{
     private:
@@ -12,102 +13,120 @@ class Node{
         float* weights;
         float* weights_n;
         float* input;
-        float output;
-        float sum;
         float der_val;
         std::string fn;
     public:
+        float output;
+        float sum;
         Node(int, std::string);
-        int activation_fn();
-        int derivative();
-        void print_vars(){
-            for(int i=0;i<n;i++){
-                std::cout<<*(weights+i)<<"\t"<<*(input+i)<<"\n";
-            }
-        }
         ~Node(){
             delete[] weights;
             delete[] input;
+            delete[] weights_n;
         }
+        void activation_fn();
+        void derivative();
+        void forward_propogate(float*);
+        void update_weights();
+        void record_weights();
+        float* calculate_err(float);
+        
 };
 
 Node::Node(int no_inputs, std::string acn){
+    srand(time(NULL));
     n = no_inputs;
     weights = new float[no_inputs];
     input = new float[no_inputs];
+    weights_n = new float[no_inputs];
     for(int i=0;i<no_inputs;i++){
         *(weights+i) = (float)(rand()) / (float)(RAND_MAX);
         *(input+i) = 0.0;
+        *(weights_n+i) = 0.0;
     }
     fn = acn;
-    weights_n = NULL;
     output = 0.0;
     sum = 0.0;
     der_val = 0.0;
-    
 }
 
-int Node::activation_fn(){
+void Node::activation_fn(){
     
     if(fn == "identity"){
         output = sum;
-        return 1;
     }
     else if(fn == "step"){
         output = ((sum>=0)?(1):(0));
-        return 1;
-
     }
     else if(fn == "sigmoid"){
         output = 1.0/(1.0+exp(-1.0*sum));
-        return 1;
     }
     else if(fn == "tanh"){
         output = (tanh(sum));
-        return 1;
     }
     else if(fn == "arctan"){
         output = (atan(sum));
-        return 1;
     }
     else if(fn == "relu"){
         output = ((sum>0)?(sum):(0));
-        return 1;
     }
-    else{
-        return 0;
-    }
+    return;
 }
 
-int Node:: derivative(){
+void Node:: derivative(){
     if(fn == "identity"){
         der_val = 1;
-        return 1;
     }
     else if(fn == "step"){
         der_val = 0;
-        return 1;
-
     }
     else if(fn == "sigmoid"){
         der_val = output*(1-output);
-        return 1;
     }
     else if(fn == "tanh"){
         der_val = 1-output*output;
-        return 1;
     }
     else if(fn == "arctan"){
         der_val = 1.0/(1.0+sum*sum);
-        return 1;
     }
     else if(fn == "relu"){
         der_val = ((sum>0)?(sum):(0));
-        return 1;
     }
-    else{
-        return 0;
+    return;
+}
+
+void Node::forward_propogate(float* data){
+    for(int i=0;i<n;i++){
+        *(input+i) = *(data+i);
+        sum += *(weights+i)+*(input+i);
     }
+    activation_fn();
+    return;
+}
+
+void Node::update_weights(){
+    for(int i=0;i<n;i++){
+        *(weights+i) += *(weights_n+i);
+    }
+}
+
+void Node::record_weights(){
+    std::cout<<"Weights:\n";
+    for(int i=0;i<n;i++){
+        std::cout<<*(weights+i)<<"\t";
+    }
+    std::cout<<std::endl;
+}
+
+float* Node::calculate_err(float err){
+    float *e = new float[n];
+    for(int i=0;i<n;i++){
+        *(e+i) = 0;
+        derivative();
+        *(weights_n+i) += err * der_val * *(input+i);
+        *(e+i) = err * der_val * *(weights+i);
+    }
+    return e;
 }
 
 #endif
