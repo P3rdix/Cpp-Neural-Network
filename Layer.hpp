@@ -9,9 +9,10 @@ class Layer{
         Layer* next;
         int layer_length;
         std::vector<Node*> nodes;
+        int no_inputs;
     public:
         Layer(int,int,std::string);
-        void display();
+        void record_layer();
         ~Layer(){
             for(int i=layer_length-1;i>=0;i--){
                 Node *temp = nodes[i];
@@ -19,10 +20,14 @@ class Layer{
                 nodes.pop_back();
             }
         }
+        float* forward_propogate(float**);
+        float* back_propogate(float*);
 };
 
 Layer::Layer(int no_nodes, int input_to_node, std::string acn){
     layer_length = no_nodes;
+    no_inputs = input_to_node;
+    next = NULL;
     for(int i=0;i<acn.length();i++){
         acn[i] = (char)tolower(acn[i]);
     }
@@ -42,16 +47,37 @@ Layer::Layer(int no_nodes, int input_to_node, std::string acn){
             nodes.emplace_back(new Node(input_to_node, acn));
         }
     }
-    next = NULL;
 }
 
-void Layer::display(){
-    std::cout<<"Next Node: "<<next<<std::endl;
+void Layer::record_layer(){
+    std::cout<<"Next Layer: "<<next<<std::endl;
     std::cout<<"Number of nodes: "<<layer_length<<std::endl;
     for(int i(0);i<layer_length;i++){
-        nodes[i]->record_weights();
+        nodes[i]->record_node();
     }
     return;
+}
+
+float* Layer::forward_propogate(float** data){
+    float* output = new float[layer_length];
+    for(int i=0;i<layer_length;i++){
+        nodes[i]->forward_propogate(*(data+i));
+        *(output+i) = nodes[i]->output;
+    }
+    return output;
+}
+
+float* Layer::back_propogate(float* error){
+    float* n_err = new float[no_inputs];
+    for(int i=0;i<no_inputs;i++){ *(n_err+i) = 0;};
+    for(int i=0;i<layer_length;i++){
+        float* temp = nodes[i]->calculate_err(*(error+i));
+        nodes[i]->update_weights();
+        for(int j=0;j<no_inputs;j++){
+            *(n_err+j) = *(temp+j);
+        }
+    }
+    return n_err;
 }
 
 #endif
