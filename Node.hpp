@@ -28,13 +28,12 @@ class Node{
         void derivative();
         void forward_propogate(float*);
         void update_weights();
-        void record_weights();
+        void record_node();
         float* calculate_err(float);
         
 };
 
 Node::Node(int no_inputs, std::string acn){
-    srand(time(NULL));
     n = no_inputs;
     weights = new float[no_inputs];
     input = new float[no_inputs];
@@ -98,24 +97,10 @@ void Node:: derivative(){
 void Node::forward_propogate(float* data){
     for(int i=0;i<n;i++){
         *(input+i) = *(data+i);
-        sum += *(weights+i)+*(input+i);
+        sum += *(weights+i)**(input+i);
     }
     activation_fn();
     return;
-}
-
-void Node::update_weights(){
-    for(int i=0;i<n;i++){
-        *(weights+i) += *(weights_n+i);
-    }
-}
-
-void Node::record_weights(){
-    std::cout<<"Weights:\n";
-    for(int i=0;i<n;i++){
-        std::cout<<*(weights+i)<<"\t";
-    }
-    std::cout<<std::endl;
 }
 
 float* Node::calculate_err(float err){
@@ -127,6 +112,20 @@ float* Node::calculate_err(float err){
         *(e+i) = err * der_val * *(weights+i);
     }
     return e;
+}
+
+void Node::update_weights(){
+    for(int i=0;i<n;i++){
+        *(weights+i) += *(weights_n+i);
+    }
+}
+
+void Node::record_node(){
+    std::cout<<"Weights:\n";
+    for(int i=0;i<n;i++){
+        std::cout<<*(weights+i)<<"\t";
+    }
+    std::cout<<std::endl;
 }
 
 #endif
