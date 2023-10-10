@@ -3,14 +3,26 @@
 
 #include "Node.hpp"
 #include <vector>
+#include <exception>
+
+class Unknown_Activation_Function_Exception: public std::exception{
+    public:
+        Unknown_Activation_Function_Exception(std::string s){
+            std::cerr<<"Error Occured"<<std::endl;
+            std::cerr<<"Unknown activation function "<<s<< " found.\n";
+            std::cerr<<"Please input a valid activation function.\n";
+            std::cerr<<"Valid functions include:\n"<<"identity\n"<<"step\n"<<"sigmoid\n"<<"tanh\n"<<"arctan\n"<<"relu\n";
+            std::abort();
+        }
+};
 
 class Layer{
     private:
         Layer* next;
-        int layer_length;
         std::vector<Node*> nodes;
         int no_inputs;
     public:
+        int layer_length;
         Layer(int,int,std::string);
         void record_layer();
         ~Layer(){
@@ -40,7 +52,7 @@ Layer::Layer(int no_nodes, int input_to_node, std::string acn){
         }
     }
     if(i!=-1){
-        throw -1;
+        throw Unknown_Activation_Function_Exception(acn);
     }
     else{
         for(int i=0;i<layer_length;i++){
