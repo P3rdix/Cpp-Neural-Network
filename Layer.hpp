@@ -18,7 +18,6 @@ class Unknown_Activation_Function_Exception: public std::exception{
 
 class Layer{
     private:
-        Layer* next;
         std::vector<Node*> nodes;
         int no_inputs;
     public:
@@ -34,12 +33,13 @@ class Layer{
         }
         float* forward_propogate(float**);
         float* back_propogate(float*);
+        void clear();
+        void store();
 };
 
 Layer::Layer(int no_nodes, int input_to_node, std::string acn){
     layer_length = no_nodes;
     no_inputs = input_to_node;
-    next = NULL;
     for(int i=0;i<acn.length();i++){
         acn[i] = (char)tolower(acn[i]);
     }
@@ -62,7 +62,6 @@ Layer::Layer(int no_nodes, int input_to_node, std::string acn){
 }
 
 void Layer::record_layer(){
-    std::cout<<"Next Layer: "<<next<<std::endl;
     std::cout<<"Number of nodes: "<<layer_length<<std::endl;
     for(int i(0);i<layer_length;i++){
         nodes[i]->record_node();
@@ -90,6 +89,18 @@ float* Layer::back_propogate(float* error){
         }
     }
     return n_err;
+}
+
+void Layer::store(){
+    for(int i=0;i<layer_length;i++){
+        nodes[i]->store();
+    }
+}
+
+void Layer::clear(){
+    for(int i=0;i<layer_length;i++){
+        nodes[i]->clear();
+    }
 }
 
 #endif
