@@ -31,8 +31,10 @@ class Layer{
                 nodes.pop_back();
             }
         }
-        float* forward_propogate(float**);
+        float* forward_propogate(float**);          //Depreciated
         float* back_propogate(float*);
+        float* calc_err(float*);
+        void update_weights();
         void clear();
         void store();
 };
@@ -89,6 +91,25 @@ float* Layer::back_propogate(float* error){
         }
     }
     return n_err;
+}
+
+float* Layer::calc_err(float* error){
+    float* n_err = new float[no_inputs];
+    for(int i=0;i<no_inputs;i++){ *(n_err+i) = 0;};
+    for(int i=0;i<layer_length;i++){
+        float* temp = nodes[i]->calculate_err(*(error+i));
+        for(int j=0;j<no_inputs;j++){
+            *(n_err+j) += *(temp+j);
+        }
+    }
+    return n_err;
+}
+
+void Layer::update_weights(){
+    for(int i=0;i<layer_length;i++){
+        nodes[i]->update_weights();
+    }
+    return;
 }
 
 void Layer::store(){
