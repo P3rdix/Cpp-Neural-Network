@@ -22,17 +22,18 @@ class Network{
         int in_dim;
         int in_size[2]; //first element is number of nodes. Second element is the number of inputs to the node.
         int output_size;
-        int back_propogate(float*);
+        void calc_err(float*);
         float* forward_propogate(float**);
-
+        void update_weights();
+        void clear_network();
     public:
         int Add_Layer(int, std::string);
         int Add_Layer(int, int, int*, std::string);
         int Add_Input_Layer(int, int*);
-        void train(float**, float**, int, int, int); 
+        void train(float**, float**, int, int, int, float); 
         void test(float**, float**, std::string);
         void record_network();
-        void batch_train(float**,float**,int,int);
+        void batch_train(float**,float**,int,int,float);
         Network();
 };
 
@@ -105,7 +106,7 @@ int Network::Add_Layer(int no_nodes, int input_dim, int* input_size, std::string
     return 1;
 }
 
-void Network::batch_train(float** x, float** y, int base, int batch_size){
+void Network::batch_train(float** x, float** y, int base, int batch_size, float lr){
     float* err = new float[output_size];
     for(int i=0;i<output_size;i++){
         *(err+i) = 0;
@@ -117,28 +118,34 @@ void Network::batch_train(float** x, float** y, int base, int batch_size){
         }
         float* temp = forward_propogate(x_t);
         for(int j=0;j<output_size;j++){
-            *(err+j) += *(temp+j);
+            std::cout<<"Output: "<<*(temp+j)<<std::endl;
+            if(*(temp+j) == 0){
+                record_network();
+            }
+            *(temp+j) = *(*(y+i)+j) - *(temp+j);
+            std::cout<<"Error: "<<*(temp+j)<<"\n";
+            *(temp+j) /= batch_size;
+            *(temp+j) *= lr;
         }
+        calc_err(temp);
+        clear_network();
         delete x_t;
         delete temp;
     }
-    for(int i=0;i<output_size;i++){
-        *(err+i) /= batch_size;
-    }
-    back_propogate(err);
+    update_weights();
     return;
 }
 
-void Network::train(float** x, float** y, int length, int batch_size, int epochs){
+void Network::train(float** x, float** y, int length, int batch_size, int epochs, float lr){
     while(epochs){
         epochs--;
         for(int i=0;i<length/batch_size+1;i++){
             std::cout<<"base "<<i<<" "<<batch_size*i<<std::endl;
             if(i == length/batch_size){
-                batch_train(x,y,batch_size*i, length%batch_size);
+                batch_train(x,y,batch_size*i, length%batch_size, lr);
             }
             else{
-                batch_train(x,y,batch_size*i,batch_size);
+                batch_train(x,y,batch_size*i,batch_size, lr);
             }
         }
     }
@@ -173,15 +180,26 @@ float* Network::forward_propogate(float** data){
 
         }
     }
-    for(int i=0;i<no_layers;i++){
-        layers[i]->store();
-        layers[i]->clear();
-    }
     return out;
 }
 
-int Network::back_propogate(float* x){
-    return 0;
+void Network::clear_network(){
+    for(int i=0;i<no_layers;i++){
+        layers[i]->clear_layer();
+    }
+}
+
+void Network::calc_err(float* err){
+    for(int i=no_layers-1;i>=0;i--){
+        err = layers[i]->calc_err(err);
+    }
+    return;
+}
+
+void Network::update_weights(){
+    for(int i=0;i<no_layers;i++){
+        layers[i]->update_weights();
+    }
 }
 
 #endif
