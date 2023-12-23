@@ -35,28 +35,26 @@ class Node{
         void update_weights();
         void record_node();
         float* calculate_err(float);
-        void clear();
-        void store();
+        void clear_node();
+        void rec_n_w();
 };
 
 Node::Node(int no_inputs, std::string acn){
     n = no_inputs;
-    weights = new float[no_inputs];
+    weights = new float[no_inputs+1];
     input = new float[no_inputs];
-    s_input = new float[no_inputs];
-    weights_n = new float[no_inputs];
+    weights_n = new float[no_inputs+1];
     for(int i=0;i<no_inputs;i++){
         *(weights+i) = (float)(rand()) / (float)(RAND_MAX);
         *(input+i) = 0.0;
         *(weights_n+i) = 0.0;
     }
+    *(weights+n) = (float)(rand()) / (float)(RAND_MAX);
+    *(weights_n+n) = 0.0;
     fn = acn;
     output = 0.0;
-    s_output = 0.0;
     sum = 0.0;
-    s_sum = 0.0;
     der_val = 0.0;
-    s_der_val = 0.0;
 }
 
 void Node::activation_fn(){
@@ -109,6 +107,7 @@ void Node::forward_propogate(float* data){
         *(input+i) = *(data+i);
         sum += *(weights+i)**(input+i);
     }
+    sum += *(weights+n);
     activation_fn();
     return;
 }
@@ -121,40 +120,41 @@ float* Node::calculate_err(float err){
         *(weights_n+i) += err * der_val * *(input+i);
         *(e+i) = err * der_val * *(weights+i);
     }
+    *(weights_n+n) += err * der_val;
     return e;
 }
 
 void Node::update_weights(){
-    for(int i=0;i<n;i++){
+    for(int i=0;i<n+1;i++){
         *(weights+i) += *(weights_n+i);
+        *(weights_n+i) = 0;
+
     }
 }
 
-void Node::store(){
-    s_sum += sum;
-    s_output += output;
-    s_der_val += der_val;
-    for(int i=0;i<n;i++){
-        *(s_input+i) += *(input+i);
-    }
-}
-
-void Node::clear(){
+void Node::clear_node(){
     sum=0;
     der_val = 0;
     output = 0;
     for(int i=0;i<n;i++){
-        *(weights_n+i) = 0;
         *(input + i) = 0;
     }
 }
 
 void Node::record_node(){
     std::cout<<"Weights:\n";
-    for(int i=0;i<n;i++){
+    for(int i=0;i<n+1;i++){
         std::cout<<*(weights+i)<<"\t";
     }
     std::cout<<std::endl;
+}
+
+void Node::rec_n_w(){
+    for(int i=0;i<n;i++){
+        std::cout<<*(weights_n+i)<<"\t";
+    }
+    std::cout<<std::endl;
+    return;
 }
 
 #endif
