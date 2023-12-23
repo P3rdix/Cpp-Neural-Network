@@ -35,8 +35,8 @@ class Layer{
         float* back_propogate(float*);
         float* calc_err(float*);
         void update_weights();
-        void clear();
-        void store();
+        void clear_layer();
+        void new_w();
 };
 
 Layer::Layer(int no_nodes, int input_to_node, std::string acn){
@@ -101,6 +101,7 @@ float* Layer::calc_err(float* error){
         for(int j=0;j<no_inputs;j++){
             *(n_err+j) += *(temp+j);
         }
+        delete temp;
     }
     return n_err;
 }
@@ -112,15 +113,15 @@ void Layer::update_weights(){
     return;
 }
 
-void Layer::store(){
+void Layer::clear_layer(){
     for(int i=0;i<layer_length;i++){
-        nodes[i]->store();
+        nodes[i]->clear_node();
     }
 }
 
-void Layer::clear(){
+void Layer::new_w(){
     for(int i=0;i<layer_length;i++){
-        nodes[i]->clear();
+        nodes[i]->rec_n_w();
     }
 }
 
