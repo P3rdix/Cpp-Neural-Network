@@ -9,6 +9,7 @@
 
 class Node{
     private:
+
         int n;
         float* weights;
         float* weights_n;
@@ -18,23 +19,30 @@ class Node{
         float der_val;
         float s_der_val;
         std::string fn;
+
     public:
+
         float output;
         float sum;
         float s_sum;
         float s_output;
+    
         Node(int, std::string);
         ~Node(){
             delete[] weights;
             delete[] input;
             delete[] weights_n;
         }
+    
         void activation_fn();
         void derivative();
+        
         void forward_propogate(float*);
+        
         void update_weights();
-        void record_node();
         float* calculate_err(float);
+        
+        void record_node();
         void clear_node();
         void rec_n_w();
 };
@@ -144,7 +152,7 @@ void Node::clear_node(){
 void Node::record_node(){
     std::cout<<"Weights:\n";
     for(int i=0;i<n+1;i++){
-        std::cout<<*(weights+i)<<"\t";
+        std::cout<<*(weights+i)<<" + "<<*(input+i)<<"\t";
     }
     std::cout<<std::endl;
 }

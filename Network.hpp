@@ -20,21 +20,33 @@ class Network{
         int no_layers;
         std::vector<Layer*> layers;
         int in_dim;
-        int in_size[2]; //first element is number of nodes. Second element is the number of inputs to the node.
+        int in_size[2];             //first element is number of nodes. Second element is the number of inputs to the node.
         int output_size;
+        int no_threads;
+        int thread_rank;
+
         void calc_err(float*);
-        float* forward_propogate(float**);
-        void update_weights();
-        void clear_network();
+        // void update_weights();
+        // void clear_network();
+
     public:
+
+        Network();
+        ~Network(){
+            MPI_Finalize();
+        }
+
         int Add_Layer(int, std::string);
         int Add_Layer(int, int, int*, std::string);
         int Add_Input_Layer(int, int*);
-        void train(float**, float**, int, int, int, float); 
-        void test(float**, float**, std::string);
+
+        float* forward_propogate(float**);
+        // void train(float**, float**, int, int, int, float); 
+        // void test(float**, float**, std::string);
+        // void batch_train(float**,float**,int,int,float);
+
+        void fit();
         void record_network();
-        void batch_train(float**,float**,int,int,float);
-        Network();
 };
 
 Network::Network(){
@@ -43,6 +55,13 @@ Network::Network(){
     in_size[0] = 0;
     in_size[1] = 0;
     output_size = 0;
+}
+
+void Network::fit(){
+    MPI_Init(NULL, NULL);
+    MPI_Comm_size(MPI_COMM_WORLD, &no_threads);
+    MPI_Comm_rank(MPI_COMM_WORLD, &thread_rank);
+    return;
 }
 
 int Network::Add_Layer(int num_of_Nodes, std::string activation_fn){
@@ -106,51 +125,51 @@ int Network::Add_Layer(int no_nodes, int input_dim, int* input_size, std::string
     return 1;
 }
 
-void Network::batch_train(float** x, float** y, int base, int batch_size, float lr){
-    float* err = new float[output_size];
-    for(int i=0;i<output_size;i++){
-        *(err+i) = 0;
-    }
-    for(int i=base;i<base+batch_size;i++){
-        float **x_t = new float*[in_size[0]];
-        for(int j=0;j<in_size[0];j++){
-            *(x_t+j) = (*(x+i)+j);
-        }
-        float* temp = forward_propogate(x_t);
-        for(int j=0;j<output_size;j++){
-            std::cout<<"Output: "<<*(temp+j)<<std::endl;
-            if(*(temp+j) == 0){
-                record_network();
-            }
-            *(temp+j) = *(*(y+i)+j) - *(temp+j);
-            std::cout<<"Error: "<<*(temp+j)<<"\n";
-            *(temp+j) /= batch_size;
-            *(temp+j) *= lr;
-        }
-        calc_err(temp);
-        clear_network();
-        delete x_t;
-        delete temp;
-    }
-    update_weights();
-    return;
-}
+// void Network::batch_train(float** x, float** y, int base, int batch_size, float lr){
+//     float* err = new float[output_size];
+//     for(int i=0;i<output_size;i++){
+//         *(err+i) = 0;
+//     }
+//     for(int i=base;i<base+batch_size;i++){
+//         float **x_t = new float*[in_size[0]];
+//         for(int j=0;j<in_size[0];j++){
+//             *(x_t+j) = (*(x+i)+j);
+//         }
+//         float* temp = forward_propogate(x_t);
+//         for(int j=0;j<output_size;j++){
+//             std::cout<<"Output: "<<*(temp+j)<<std::endl;
+//             if(*(temp+j) == 0){
+//                 record_network();
+//             }
+//             *(temp+j) = *(*(y+i)+j) - *(temp+j);
+//             std::cout<<"Error: "<<*(temp+j)<<"\n";
+//             *(temp+j) /= batch_size;
+//             *(temp+j) *= lr;
+//         }
+//         calc_err(temp);
+//         clear_network();
+//         delete x_t;
+//         delete temp;
+//     }
+//     update_weights();
+//     return;
+// }
 
-void Network::train(float** x, float** y, int length, int batch_size, int epochs, float lr){
-    while(epochs){
-        epochs--;
-        for(int i=0;i<length/batch_size+1;i++){
-            std::cout<<"base "<<i<<" "<<batch_size*i<<std::endl;
-            if(i == length/batch_size){
-                batch_train(x,y,batch_size*i, length%batch_size, lr);
-            }
-            else{
-                batch_train(x,y,batch_size*i,batch_size, lr);
-            }
-        }
-    }
-    return;
-}
+// void Network::train(float** x, float** y, int length, int batch_size, int epochs, float lr){
+//     while(epochs){
+//         epochs--;
+//         for(int i=0;i<length/batch_size+1;i++){
+//             std::cout<<"base "<<i<<" "<<batch_size*i<<std::endl;
+//             if(i == length/batch_size){
+//                 batch_train(x,y,batch_size*i, length%batch_size, lr);
+//             }
+//             else{
+//                 batch_train(x,y,batch_size*i,batch_size, lr);
+//             }
+//         }
+//     }
+//     return;
+// }
 
 void Network::record_network(){
     for(int i=0;i<no_layers;i++){
@@ -158,48 +177,68 @@ void Network::record_network(){
     }
 }
 
+
+
+
+
+
+
+
+
+
+
 float* Network::forward_propogate(float** data){
-    float** temp = data;
     float* out = NULL;
     for(int i=0;i<no_layers;i++){
-        float* n = layers[i]->forward_propogate(temp);
-        if(i!=no_layers-1){
-            int y = layers[i+1]->layer_length;
-            int p = layers[i]->layer_length;
-            if(i!=0){
-                delete *(temp);
-                delete temp;
-            }
-            temp = new float*[y];
-            for(int j=0;j<y;j++){
-                temp[j] = n;
-            }
+        int p = layers[i]->layer_length;
+        if(i==0){
+            layers[i]->input_propogate(data,no_threads,thread_rank);
         }
         else{
-            out = n;
-
+            layers[i]->forward_propogate(layers[i-1]->output,no_threads,thread_rank);
+        }
+        MPI_Barrier(MPI_COMM_WORLD);
+        if(thread_rank==0){
+            for(int j=0;j<p;j++){
+                std::cout<<*(layers[i]->output+j)<<"\t";
+            }
+            std::cout<<std::endl;
+        }
+        if(i==no_layers-1){
+            out = new float[layers[i]->layer_length];
+            for(int i=0;i<layers[i]->layer_length;i++){
+                *(out+i) = *(layers[i]->output + i);
+            }
         }
     }
     return out;
 }
 
-void Network::clear_network(){
-    for(int i=0;i<no_layers;i++){
-        layers[i]->clear_layer();
-    }
-}
 
-void Network::calc_err(float* err){
-    for(int i=no_layers-1;i>=0;i--){
-        err = layers[i]->calc_err(err);
-    }
-    return;
-}
 
-void Network::update_weights(){
-    for(int i=0;i<no_layers;i++){
-        layers[i]->update_weights();
-    }
-}
+
+
+// void Network::clear_network(){
+//     for(int i=0;i<no_layers;i++){
+//         layers[i]->clear_layer();
+//     }
+// }
+
+
+
+// void Network::calc_err(float* err){
+//     for(int i=no_layers-1;i>=0;i--){
+//         err = layers[i]->calc_err(err);
+//     }
+//     return;
+// }
+
+
+
+// void Network::update_weights(){
+//     for(int i=0;i<no_layers;i++){
+//         layers[i]->update_weights();
+//     }
+// }
 
 #endif
